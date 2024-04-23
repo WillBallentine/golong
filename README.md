@@ -9,3 +9,5 @@
 (_______)(_______)(_______/(_______)|/    )_)(_______)
                                                       
 ```
+
+GoLong is a message broker queue system built in Go.
