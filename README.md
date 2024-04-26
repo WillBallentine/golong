@@ -25,6 +25,7 @@ As this project matures, more features will be added and eventually, clients wil
 3. open a new terminal window and make a connection to the server by running `ssh -o "StrictHostKeyChecking=no"  -p 2222 your_name_here@127.0.0.1` or the same command and replace `127.0.0.1` with the IP of the computer running the server
 4. in the control terminal just opened, send commands 
 
+NOTE: the `consumer` folder and contents are currently unused and do not work. There is a static consumer built into the `broker` package currently for testing purposes
 
 ## Current Features
 
