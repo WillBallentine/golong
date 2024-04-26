@@ -3,12 +3,16 @@ package broker
 import (
 	"errors"
 	"fmt"
-	"github.com/gliderlabs/ssh"
-	"golang.org/x/term"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/gliderlabs/ssh"
+	"golang.org/x/term"
 )
+
+//TODO: need to break out server and client into different packages
+//TODO: write a more uniform TUI for controlls
 
 var (
 	sessions       map[*ssh.Session]*Broker
@@ -16,7 +20,7 @@ var (
 	switchQueueCmd = regexp.MustCompile(`^/sq.*`)
 	helpCmd        = regexp.MustCompile(`^/help.*`)
 	exitCmd        = regexp.MustCompile(`^/exit.*`)
-	listCmd        = regexp.MustCompile(`^/list.*`)
+	histCmd        = regexp.MustCompile(`^/h.*`)
 )
 
 type Broker struct {
@@ -29,6 +33,7 @@ type Producer struct {
 	Broker *Broker
 }
 
+// TODO: remove consumer logic here. building to not require a broker
 type Consumer struct {
 	Broker *Broker
 }
@@ -46,6 +51,7 @@ func (b *Broker) NewQueue(qName string) Queue {
 	}
 }
 
+// TODO: remove consumer logic here
 func NewConsumer(broker *Broker) *Consumer {
 	return &Consumer{Broker: broker}
 }
@@ -62,6 +68,7 @@ func (b *Broker) Publish(message Message, name string) {
 	}
 }
 
+// TODO: remove consumer logic here.
 func (b *Broker) Consume(name string) (Message, error) {
 	for i := 0; i < len(b.queues); i++ {
 		if name == b.queues[i].name {
@@ -72,11 +79,75 @@ func (b *Broker) Consume(name string) (Message, error) {
 			}
 
 			message := b.queues[i].messages[0]
-			b.queues[i].messages = b.queues[i].messages[1:]
+
+			// we only save the last 10 messages in any one queue
+			if len(b.queues[i].messages) > 10 {
+				b.queues[i].messages = b.queues[i].messages[1:]
+			}
 			return message, nil
 		}
 	}
 	return Message{Payload: []byte("queue not found")}, nil
+}
+
+func (b *Broker) QueueHistory(currentQueue string, newTerm *term.Terminal) {
+	if len(b.queues) > 0 {
+		for i := 0; i < len(b.queues); i++ {
+			if b.queues[i].name == currentQueue {
+				fmt.Printf("queue name: %s\n", b.queues[i].name)
+				if len(b.queues[i].messages) > 0 {
+					for m := 0; m < len(b.queues[i].messages); m++ {
+						newTerm.Write([]byte("\n"))
+						newTerm.Write([]byte(b.queues[i].messages[m].Payload))
+						newTerm.Write([]byte("\n"))
+					}
+				}
+			}
+		}
+	}
+
+}
+
+func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Producer) string {
+	term.Write([]byte("enter new queue name: "))
+	currentQueue := ""
+	name, err := term.ReadLine()
+	if err != nil {
+		fmt.Printf("error creating queue: %s", err)
+	}
+	currentQueue = name
+	fmt.Println(currentQueue + "\n")
+	return currentQueue
+}
+
+func (b *Broker) SwitchQueue(term *term.Terminal) string {
+	currentQueue := ""
+	term.Write([]byte("select a queue: "))
+	if len(b.queues) > 0 {
+		for i := 0; i < len(b.queues); i++ {
+			term.Write([]byte("\n"))
+			term.Write([]byte(b.queues[i].name))
+			term.Write([]byte("\n"))
+		}
+		name, err := term.ReadLine()
+		if err != nil {
+			fmt.Printf("error switching queues: %s", err)
+		}
+		for a := 0; a < len(b.queues); a++ {
+			if b.queues[a].name == name {
+				currentQueue = name
+				term.Write([]byte("switched to queue -- "))
+				term.Write([]byte(currentQueue))
+				fmt.Printf("switched to queue %s", currentQueue)
+				return currentQueue
+			} else {
+				continue
+			}
+		}
+	} else {
+		fmt.Println("no valid queues")
+	}
+	return currentQueue
 }
 
 func (b *Broker) SessionManager(sess ssh.Session) {
@@ -93,40 +164,15 @@ func (b *Broker) SessionManager(sess ssh.Session) {
 		if len(line) > 0 {
 			if string(line[0]) == "/" {
 				switch {
-				//TODO: need to add in queue history print
+				//TODO: need to add server side logging
 				case exitCmd.MatchString(string(line)):
 					return
+				case histCmd.MatchString(string(line)):
+					b.QueueHistory(currentQueue, newTerm)
 				case newQueueCmd.MatchString(string(line)):
-					newTerm.Write([]byte("enter new queue name: "))
-					name, err := newTerm.ReadLine()
-					if err != nil {
-						break
-					}
-					currentQueue = name
-					producer.ProduceMessage([]byte(line), currentQueue)
-					fmt.Println(currentQueue + "\n")
+					currentQueue = b.UserQueueCreate(newTerm, line, producer)
 				case switchQueueCmd.MatchString(string(line)):
-					newTerm.Write([]byte("select a queue: "))
-					if len(b.queues) > 0 {
-						for i := range b.queues {
-							newTerm.Write([]byte("\n"))
-							newTerm.Write([]byte(b.queues[i].name))
-							newTerm.Write([]byte("\n"))
-						}
-						name, err := newTerm.ReadLine()
-						if err != nil {
-							break
-						}
-						currentQueue = name
-						newTerm.Write([]byte("switched to queue -- "))
-						newTerm.Write([]byte(currentQueue))
-						fmt.Printf("switched to queue %s", currentQueue)
-						break
-					} else {
-						fmt.Println("not a valid queue. please enter a new cmd")
-						break
-					}
-
+					currentQueue = b.SwitchQueue(newTerm)
 				default:
 					producer.ProduceMessage([]byte(line), currentQueue)
 					fmt.Printf("default path. Queue = %s\n", currentQueue)
