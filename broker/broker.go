@@ -107,7 +107,7 @@ func (b *Broker) QueueHistory(currentQueue string, newTerm *term.Terminal) {
 
 }
 
-func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Producer) {
+func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Producer) string {
 	term.Write([]byte("enter new queue name: "))
 	currentQueue := ""
 	name, err := term.ReadLine()
@@ -115,17 +115,17 @@ func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Pro
 		fmt.Printf("error creating queue: %s", err)
 	}
 	currentQueue = name
-	b.NewQueue(currentQueue)
 	fmt.Println(currentQueue + "\n")
+	producer.ProduceMessage([]byte(name), currentQueue)
+	return currentQueue
 }
 
-// TODO: Fix this only printing one queue
 func (b *Broker) SwitchQueue(term *term.Terminal) string {
 	currentQueue := ""
 	term.Write([]byte("select a queue: "))
 	if len(b.queues) > 0 {
-		for q := 0; q < len(b.queues); q++ {
-			term.Write([]byte(b.queues[q].name))
+		for _, q := range b.queues {
+			term.Write([]byte(q.name))
 			term.Write([]byte("\n"))
 		}
 		name, err := term.ReadLine()
@@ -139,11 +139,9 @@ func (b *Broker) SwitchQueue(term *term.Terminal) string {
 				term.Write([]byte(currentQueue))
 				fmt.Printf("switched to queue %s", currentQueue)
 				return currentQueue
-			} else {
-				continue
 			}
 		}
-	} else {
+		term.Write([]byte("no valid queue"))
 		fmt.Println("no valid queues")
 	}
 	return currentQueue
@@ -186,9 +184,13 @@ func (b *Broker) SessionManager(sess ssh.Session) {
 				case histCmd.MatchString(string(line)):
 					b.QueueHistory(currentQueue, newTerm)
 				case newQueueCmd.MatchString(string(line)):
-					b.UserQueueCreate(newTerm, line, producer)
+					currentQueue = b.UserQueueCreate(newTerm, line, producer)
 				case switchQueueCmd.MatchString(string(line)):
+					prevQueue := currentQueue
 					currentQueue = b.SwitchQueue(newTerm)
+					if currentQueue == "" {
+						currentQueue = prevQueue
+					}
 				default:
 					producer.ProduceMessage([]byte(line), currentQueue)
 					fmt.Printf("default path. Queue = %s\n", currentQueue)
