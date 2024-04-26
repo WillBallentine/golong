@@ -11,9 +11,9 @@ import (
 	"golang.org/x/term"
 )
 
-//TODO: need to break out server and client into different packages
-//TODO: write a more uniform TUI for controlls
-
+// TODO: need to break out server and client into different packages
+// TODO: write a more uniform TUI for controlls
+// TODO: debug why multiple versions of a queue are created at times via the /nq or /sq command (see phone screenshot for details)
 var (
 	sessions       map[*ssh.Session]*Broker
 	newQueueCmd    = regexp.MustCompile(`^/nq.*`)
@@ -178,6 +178,8 @@ func (b *Broker) SessionManager(sess ssh.Session) {
 		if len(line) > 0 {
 			if string(line[0]) == "/" {
 				switch {
+				//TODO: need to add in queue delete function
+				//TODO: need to add in session management
 				//TODO: need to add server side logging
 				case exitCmd.MatchString(string(line)):
 					return
