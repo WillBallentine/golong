@@ -18,6 +18,14 @@ Currently, this project is in its early stages of creation. The code, as it stan
 There is a message limit of 10 hardcoded into each queue for the time being as well to allow for easy testing of the history feature. 
 As this project matures, more features will be added and eventually, clients will be able to be instantiated to listen on a certain queue and then process the messages as they come in.
 
+## How to use GoLong in its current state
+
+1. clone the repo
+2. navigate into the golong dir and run `go run .` to start a server
+3. open a new terminal window and make a connection to the server by running `ssh -o "StrictHostKeyChecking=no"  -p 2222 your_name_here@127.0.0.1` or the same command and replace `127.0.0.1` with the IP of the computer running the server
+4. in the control terminal just opened, send commands 
+
+
 ## Current Features
 
 Currently, a connection can be made to a running server via SSH and messages can be sent to the server. 
