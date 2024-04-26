@@ -97,7 +97,6 @@ func (b *Broker) QueueHistory(currentQueue string, newTerm *term.Terminal) {
 				fmt.Printf("queue name: %s\n", b.queues[i].name)
 				if len(b.queues[i].messages) > 0 {
 					for m := 0; m < len(b.queues[i].messages); m++ {
-						newTerm.Write([]byte("\n"))
 						newTerm.Write([]byte(b.queues[i].messages[m].Payload))
 						newTerm.Write([]byte("\n"))
 					}
@@ -108,7 +107,7 @@ func (b *Broker) QueueHistory(currentQueue string, newTerm *term.Terminal) {
 
 }
 
-func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Producer) string {
+func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Producer) {
 	term.Write([]byte("enter new queue name: "))
 	currentQueue := ""
 	name, err := term.ReadLine()
@@ -116,17 +115,17 @@ func (b *Broker) UserQueueCreate(term *term.Terminal, line string, producer *Pro
 		fmt.Printf("error creating queue: %s", err)
 	}
 	currentQueue = name
+	b.NewQueue(currentQueue)
 	fmt.Println(currentQueue + "\n")
-	return currentQueue
 }
 
+// TODO: Fix this only printing one queue
 func (b *Broker) SwitchQueue(term *term.Terminal) string {
 	currentQueue := ""
 	term.Write([]byte("select a queue: "))
 	if len(b.queues) > 0 {
-		for i := 0; i < len(b.queues); i++ {
-			term.Write([]byte("\n"))
-			term.Write([]byte(b.queues[i].name))
+		for q := 0; q < len(b.queues); q++ {
+			term.Write([]byte(b.queues[q].name))
 			term.Write([]byte("\n"))
 		}
 		name, err := term.ReadLine()
@@ -153,8 +152,25 @@ func (b *Broker) SwitchQueue(term *term.Terminal) string {
 func (b *Broker) SessionManager(sess ssh.Session) {
 	newTerm := term.NewTerminal(sess, fmt.Sprint("> "))
 	producer := NewProducer(b)
+	newTerm.Write([]byte("control terminal starting..."))
+	newTerm.Write([]byte("\n"))
+	newTerm.Write([]byte(`
+ _______  _______  _        _______  _        _______ 
+(  ____ \(  ___  )( \      (  ___  )( (    /|(  ____ \
+| (    \/| (   ) || (      | (   ) ||  \  ( || (    \/
+| |      | |   | || |      | |   | ||   \ | || |      
+| | ____ | |   | || |      | |   | || (\ \) || | ____ 
+| | \_  )| |   | || |      | |   | || | \   || | \_  )
+| (___) || (___) || (____/\| (___) || )  \  || (___) |
+(_______)(_______)(_______/(_______)|/    )_)(_______)
+	`))
+	newTerm.Write([]byte("\n"))
 	currentQueue := "init"
+	b.NewQueue(currentQueue)
 	for {
+		newTerm.Write([]byte("current queue: "))
+		newTerm.Write([]byte(currentQueue))
+		newTerm.Write([]byte(" --"))
 		fmt.Printf("currentQueue = %s\n", currentQueue)
 		line, err := newTerm.ReadLine()
 		if err != nil {
@@ -170,7 +186,7 @@ func (b *Broker) SessionManager(sess ssh.Session) {
 				case histCmd.MatchString(string(line)):
 					b.QueueHistory(currentQueue, newTerm)
 				case newQueueCmd.MatchString(string(line)):
-					currentQueue = b.UserQueueCreate(newTerm, line, producer)
+					b.UserQueueCreate(newTerm, line, producer)
 				case switchQueueCmd.MatchString(string(line)):
 					currentQueue = b.SwitchQueue(newTerm)
 				default:
