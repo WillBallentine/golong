@@ -14,8 +14,9 @@ GoLong is a message broker queue system built in Go.
 
 ## About
 
-Currently, this project is in its early stages of creation. The code, as it stands right now, functions more like a chat between a client and a server but with messages only flowing one way to the server from the client.
-As this project matures, more features will be added and eventually, clients will be able to be instantiated to listen on a certain queue and then process the messages as they come in.
+Currently, this project is in its early stages of creation. 
+
+GoLong now has a working broker/subscriber structure. golong/consumer contains the logic for the basic subscriber package. Currently the package only prints the message to the terminal window, but this is where a true subscriber would take the message and perform some business logic with it.
 
 GoLong uses a TCP connection to facilitate the message brokerage. Within your Producer or Consumer project, you will need to add the code needed to make such a connection and send the appropriately formatted message to the broker.
 
@@ -23,8 +24,9 @@ GoLong uses a TCP connection to facilitate the message brokerage. Within your Pr
 
 1. clone the repo
 2. navigate into the golong/server dir and run `go run .` to start a server
+3. in a new terminal window navigate into the golong/consumer dir and run `go run .` to start a consumer that is subscribed to the "test" queue (one of the two default queues offered by GoLong)
 3. open a new terminal window and make a connection to the server by running `telnet 127.0.0.1 2222` or the same command and replace `127.0.0.1` with the IP of the computer running the server
-4. in the control terminal just opened, send commands 
+4. in the control terminal just opened, send commands and they will be produced on the consumber if sent to the subscribed queue
 
 ## Message Structure
 
@@ -37,6 +39,12 @@ A user can run any of the following commands as well:
 - nq       -- this will create a new queue using the [queueName] field as the new queue's name. (ex: `newqueue:cmd:nq`)
 - hist     -- this displays the previous messages sent on a particular queue (ex: `queueName:cmd:hist`)
 
+## Consumers
+
+Currently, the default configuration subscribes to the "test" queue of the server. To change this, modify the `if _, err := conn.Write([]byte("sub:test\n"));` line. 
+NOTE: you will need to create the new queue first if it does not already exist for this to work
+
+Any tcp connection can also be made to subscribe to a queue if a message that follows the `sub:[queueName]` formatting is sent as a message from that client instance
 
 ## Support
 
