@@ -1,19 +1,29 @@
 package main
 
 import (
-	"log"
-
+	"fmt"
 	"github.com/WillBallentine/golong/broker"
-	"github.com/gliderlabs/ssh"
+	"net"
 )
 
 func main() {
 	b := broker.NewBroker()
-	ssh.Handle(func(s ssh.Session) {
-		b.SessionManager(s)
-	})
+	ln, err := net.Listen("tcp", "127.0.0.1:2222")
+	if err != nil {
+		fmt.Println("Failed to start server:", err)
+		return
+	}
+	defer ln.Close()
 
-	log.Println("starting ssh server on port 2222...")
-	log.Fatal(ssh.ListenAndServe(":2222", nil))
+	fmt.Println("Server is listening on port 2222")
 
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println("Failed to accept connection:", err)
+			continue
+		}
+
+		go b.HandleConnection(conn)
+	}
 }
