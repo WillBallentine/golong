@@ -14,8 +14,6 @@ GoLong is a message broker queue system built in Go.
 
 ## About
 
-Currently, this project is in its early stages of creation. 
-
 GoLong now has a working broker/subscriber structure. golong/consumer contains the logic for the basic subscriber package. Currently the package only prints the message to the terminal window, but this is where a true subscriber would take the message and perform some business logic with it.
 
 GoLong uses a TCP connection to facilitate the message brokerage. Within your Producer or Consumer project, you will need to add the code needed to make such a connection and send the appropriately formatted message to the broker.
