@@ -11,19 +11,19 @@
 
 ```
 
-GoLong is a message broker queue system built in Go.
+GoLong-MQ is a message broker queue system built in Go.
 
 ## About
 
-GoLong now has a working broker/subscriber structure. golong/consumer contains the logic for the basic subscriber package. Currently the package only prints the message to the terminal window, but this is where a true subscriber would take the message and perform some business logic with it.
+GoLong-MQ now has a working broker/subscriber structure. golong-mq/consumer contains the logic for the basic subscriber package. Currently the package only prints the message to the terminal window, but this is where a true subscriber would take the message and perform some business logic with it.
 
-GoLong uses a TCP connection to facilitate the message brokerage. Within your Producer or Consumer project, you will need to add the code needed to make such a connection and send the appropriately formatted message to the broker.
+GoLong-MQ uses a TCP connection to facilitate the message brokerage. Within your Producer or Consumer project, you will need to add the code needed to make such a connection and send the appropriately formatted message to the broker.
 
 ## How to use GoLong in its current state
 
 1. clone the repo
-2. navigate into the golong/server dir and run `go run .` to start a server
-3. in a new terminal window navigate into the golong/consumer dir and run `go run .` to start a consumer that is subscribed to the "test" queue (one of the two default queues offered by GoLong)
+2. navigate into the golong-mq/server dir and run `go run .` to start a server
+3. in a new terminal window navigate into the golong-mq/consumer dir and run `go run .` to start a consumer that is subscribed to the "test" queue (one of the two default queues offered by GoLong-MQ)
 3. open a new terminal window and make a connection to the server by running `telnet 127.0.0.1 2222` or the same command and replace `127.0.0.1` with the IP of the computer running the server
 4. in the control terminal just opened, send commands and they will be produced on the consumber if sent to the subscribed queue
 
